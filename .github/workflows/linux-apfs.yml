@@ -22,7 +22,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends build-essential ca-certificates curl git python3 xz-utils zlib1g-dev libssl-dev 7zip
-          7zz --help >/dev/null
+          command -v 7zz || command -v 7z || command -v 7zzs
 
       - name: Fetch and build exact Xaga inputs, then run both image readers
         env:

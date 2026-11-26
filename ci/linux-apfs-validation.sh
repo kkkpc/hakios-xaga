@@ -13,10 +13,16 @@ git clone --no-checkout https://github.com/ShuiLan114514/SLNeko-XNU.git "$SRC"
 git -C "$SRC" checkout --detach 13745bc916fa8f992b2468eb8db3595575abde6d
 printf 'source_commit=%s\n' "$(git -C "$SRC" rev-parse HEAD)" >> "$WORK/metadata.txt"
 
-# Debian/Ubuntu's 7zip package installs 7zz; fetch.sh expects the historical `7z` name.
+# Ubuntu 7zip packages expose different executable names; fetch.sh expects `7z`.
+SEVEN_ZIP="$(command -v 7zz || command -v 7z || command -v 7zzs || true)"
+if [[ -z "$SEVEN_ZIP" ]]; then
+  echo 'No 7-Zip executable found after installing Ubuntu package 7zip.' >&2
+  dpkg -L 7zip >&2 || true
+  exit 1
+fi
 BIN="$RUNNER_TEMP/7z-compat"
 mkdir -p "$BIN"
-ln -sf "$(command -v 7zz)" "$BIN/7z"
+ln -sf "$SEVEN_ZIP" "$BIN/7z"
 export PATH="$BIN:$PATH"
 
 (
