@@ -1,0 +1,33 @@
+diff --git a/tools/apfs/mkapfs.py b/tools/apfs/mkapfs.py
+index 693fe9c..e679698 100755
+--- a/tools/apfs/mkapfs.py
++++ b/tools/apfs/mkapfs.py
+@@ -65,7 +65,10 @@ DECMPFS_ZLIB_ATTR, DECMPFS_ZLIB_RSRC = 3, 4
+ XATTR_MAX_EMBEDDED = 3804               # the most an attribute's value can hold in its record
+ PIECE = 65536
+ 
+-SM_BITMAP_XID_OFF = 0x150               # (apfsprogs' mkapfs: from a test image)
++SM_FLAG_VERSIONED = 1
++SM_VERSION = 1
++SM_STRUCT_SIZE = 2520                  # apfs_spaceman_phys including the zeroed datazone
++SM_BITMAP_XID_OFF = SM_STRUCT_SIZE    # variable-length tables follow the entire fixed structure
+ IP_BM_TX_MULTIPLIER = 16
+ IP_BM_INDEX_INVALID = 0xffff
+ 
+@@ -808,12 +811,15 @@ class Container:
+         struct.pack_into('<IIII', sm, 32, BS, bpc, self.chunks_per_cib, self.cibs_per_cab)
+         struct.pack_into('<QQIIQIIQ', sm, 48, bc, self.chunks, self.cibs, self.cabs, free_total,
+                          self.cib_addr_off, 0, 0)
+-        struct.pack_into('<IIQIIQQQQ', sm, 144, 0, IP_BM_TX_MULTIPLIER, self.ip_blocks, self.ip_bm_size,
++        # The empty Tier 2 table still points to the end of the main device's table.
++        struct.pack_into('<I', sm, 128, self.cib_addr_off + 8 * (self.cabs or self.cibs))
++        struct.pack_into('<IIQIIQQQQ', sm, 144, SM_FLAG_VERSIONED, IP_BM_TX_MULTIPLIER, self.ip_blocks, self.ip_bm_size,
+                          self.ip_bmap_blocks, self.ip_bm_base, self.ip_base, 0, 0)
+         struct.pack_into('<QQQHHIQ', sm, 200, 0, self.ipfq_oid, 0, ip_fq_node_limit(self.chunks), 0, 0, 0)
+         struct.pack_into('<QQQHHIQ', sm, 240, 0, self.mainfq_oid, 0, main_fq_node_limit(bc), 0, 0, 0)
+         struct.pack_into('<HHIII', sm, 320, self.ip_bm_size, self.ip_bmap_blocks - 1, SM_BITMAP_XID_OFF,
+                          self.bm_addr_off, self.bm_free_next_off)
++        struct.pack_into('<II', sm, 336, SM_VERSION, SM_STRUCT_SIZE)
+         for i in range(self.ip_bm_size):
+             struct.pack_into('<Q', sm, SM_BITMAP_XID_OFF + 8 * i, XID)
+             struct.pack_into('<H', sm, self.bm_addr_off + 2 * i, i)

@@ -12,6 +12,10 @@ printf 'utc_started=%s\n' "$(date -u +%FT%TZ)" > "$WORK/metadata.txt"
 git clone --no-checkout https://github.com/ShuiLan114514/SLNeko-XNU.git "$SRC"
 git -C "$SRC" checkout --detach 13745bc916fa8f992b2468eb8db3595575abde6d
 printf 'source_commit=%s\n' "$(git -C "$SRC" rev-parse HEAD)" >> "$WORK/metadata.txt"
+PATCH="$GITHUB_WORKSPACE/ci/spaceman-v1.patch"
+git -C "$SRC" apply --check "$PATCH"
+git -C "$SRC" apply "$PATCH"
+sha256sum "$PATCH" >> "$WORK/metadata.txt"
 
 # Ubuntu 7zip packages expose different executable names; fetch.sh expects `7z`.
 SEVEN_ZIP="$(command -v 7zz || command -v 7z || command -v 7zzs || true)"
