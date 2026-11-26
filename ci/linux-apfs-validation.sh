@@ -32,7 +32,8 @@ export PATH="$BIN:$PATH"
 
 (
   cd "$SRC/userland"
-  PREBUILT=1 CHECK=1 SYSTEM=1 FLASHBOOT=1 bash ./build.sh
+  # This job validates APFS layout/content; optional dynamic test binaries require Apple's iOS SDK.
+  PREBUILT=1 SKIP_DYN=1 CHECK=1 SYSTEM=1 FLASHBOOT=1 bash ./build.sh
 ) 2>&1 | tee "$WORK/build-and-check.log"
 
 {
