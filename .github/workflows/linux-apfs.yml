@@ -1,0 +1,39 @@
+name: Linux APFS image validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/linux-apfs.yml
+      - ci/linux-apfs-validation.sh
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout validation workflow
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Linux build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential ca-certificates curl git python3 xz-utils zlib1g-dev libssl-dev 7zip
+          7zz --help >/dev/null
+
+      - name: Fetch and build exact Xaga inputs, then run both image readers
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: bash ci/linux-apfs-validation.sh
+
+      - name: Upload validation logs only (never firmware/images)
+        if: always()
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.2
+        with:
+          name: linux-apfs-validation-logs
+          path: ci-results/
+          if-no-files-found: warn
+          retention-days: 7
